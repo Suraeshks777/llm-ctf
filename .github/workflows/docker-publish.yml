@@ -2,7 +2,7 @@ name: Build, Scan, and Publish Container
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -14,34 +14,25 @@ env:
   IMAGE_NAME: suraeshks777/llm-ctf-backend
 
 jobs:
-  build-scan-publish:
-    name: Build, Scan, and Publish Backend Image
+  publish:
+    name: Publish Backend Image
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract Docker image metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build image locally for security scan
+      - name: Build image for scan
         uses: docker/build-push-action@v6
         with:
           context: ./backend
@@ -49,7 +40,7 @@ jobs:
           tags: llm-ctf-backend:scan
 
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           image-ref: llm-ctf-backend:scan
           format: table
@@ -57,7 +48,16 @@ jobs:
           ignore-unfixed: true
           exit-code: "0"
 
-      - name: Build and publish image to GHCR
+      - name: Generate image tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=raw,value=latest
+
+      - name: Publish image
         uses: docker/build-push-action@v6
         with:
           context: ./backend
