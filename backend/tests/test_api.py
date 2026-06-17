@@ -1,5 +1,13 @@
+import sys
+from pathlib import Path
+
 from fastapi.testclient import TestClient
-from main import app
+
+# Ensure backend directory is available in Python path during GitHub Actions
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(BACKEND_DIR))
+
+from main import app  # noqa: E402
 
 client = TestClient(app)
 
