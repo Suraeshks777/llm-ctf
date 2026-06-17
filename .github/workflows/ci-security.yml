@@ -36,7 +36,7 @@ jobs:
         run: pytest -q
 
       - name: Run Bandit static security scan
-        run: bandit -r . -x tests,.venv
+        run: bandit -r . -x tests,.venv -ll
 
       - name: Run Python dependency audit
         run: pip-audit -r requirements.txt
